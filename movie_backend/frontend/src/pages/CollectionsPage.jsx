@@ -1,250 +1,103 @@
-import { useEffect, useState } from "react";
-import {
-  getCollections,
-  createCollection,
-  deleteCollection,
-  addMovieToCollection,
-  removeMovieFromCollection,
-} from "../services/collectionService";
-
-export default function CollectionsPage() {
-  const user_id = "1";
-
+import React, { useState } from "react";
+ 
+function Collections() {
+  const [collectionName, setCollectionName] = useState("");
   const [collections, setCollections] = useState([]);
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-
-  // =========================
-  // FETCH COLLECTIONS
-  // =========================
-  const fetchCollections = async () => {
-    try {
-      const res = await getCollections(user_id);
-
-      const data =
-        res?.data?.collections ||
-        res?.data?.data ||
-        res?.data ||
-        [];
-
-      setCollections(Array.isArray(data) ? data : []);
-    } catch (error) {
-      setCollections([]);
+ 
+  const createCollection = () => {
+    if (!collectionName.trim()) {
+      alert("Enter Collection Name");
+      return;
     }
+ 
+    const newCollection = {
+      id: Date.now(),
+      name: collectionName,
+    };
+ 
+    setCollections([...collections, newCollection]);
+    setCollectionName("");
   };
-
-  useEffect(() => {
-    fetchCollections();
-  }, []);
-
-  // =========================
-  // CREATE
-  // =========================
-  const handleCreate = async () => {
-    if (!name.trim()) return;
-
-    await createCollection({
-      user_id,
-      name,
-      description,
-    });
-
-    setName("");
-    setDescription("");
-    fetchCollections();
-  };
-
-  // =========================
-  // DELETE
-  // =========================
-  const handleDelete = async (id) => {
-    await deleteCollection(id);
-    fetchCollections();
-  };
-
-  // =========================
-  // ADD MOVIE
-  // =========================
-  const handleAddMovie = async (id) => {
-    const movieId = prompt("Enter Movie ID:");
-    if (!movieId) return;
-
-    await addMovieToCollection(id, {
-      movie_id: movieId,
-    });
-
-    fetchCollections();
-  };
-
-  // =========================
-  // REMOVE MOVIE
-  // =========================
-  const handleRemoveMovie = async (cid, mid) => {
-    await removeMovieFromCollection(cid, mid);
-    fetchCollections();
-  };
-
+ 
   return (
-    <div style={styles.page}>
-      <h2>🎬 Collections</h2>
-
-      {/* CREATE BOX */}
-      <div style={styles.box}>
+    <div
+      style={{
+        marginLeft: "260px",
+        padding: "30px",
+        minHeight: "100vh",
+        backgroundColor: "#0f172a",
+        color: "white",
+      }}
+    >
+      <h1 style={{ marginBottom: "20px" }}>
+        📁 My Collections
+      </h1>
+ 
+      <div
+        style={{
+          display: "flex",
+          gap: "10px",
+          marginBottom: "30px",
+        }}
+      >
         <input
-          style={styles.input}
-          placeholder="Collection Name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
+          type="text"
+          placeholder="Enter Collection Name"
+          value={collectionName}
+          onChange={(e) => setCollectionName(e.target.value)}
+          style={{
+            width: "300px",
+            padding: "12px",
+            borderRadius: "8px",
+            border: "1px solid #ccc",
+            fontSize: "16px",
+          }}
         />
-
-        <input
-          style={styles.input}
-          placeholder="Description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        />
-
-        <button style={styles.createBtn} onClick={handleCreate}>
-          Create Collection
+ 
+        <button
+          onClick={createCollection}
+          style={{
+            padding: "12px 20px",
+            border: "none",
+            borderRadius: "8px",
+            backgroundColor: "#2563eb",
+            color: "white",
+            cursor: "pointer",
+            fontSize: "16px",
+          }}
+        >
+          Create
         </button>
       </div>
-
-      {/* GRID */}
-      <div style={styles.grid}>
-        {collections.map((col) => (
-          <div key={col.id} style={styles.card}>
-            <h3>{col.name}</h3>
-            <p>{col.description}</p>
-
-            {/* ACTION BUTTONS */}
-            <div style={styles.row}>
-              <button
-                style={styles.addBtn}
-                onClick={() => handleAddMovie(col.id)}
-              >
-                + Add Movie
-              </button>
-
-              <button
-                style={styles.deleteBtn}
-                onClick={() => handleDelete(col.id)}
-              >
-                Delete
-              </button>
+ 
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill,minmax(250px,1fr))",
+          gap: "20px",
+        }}
+      >
+        {collections.length > 0 ? (
+          collections.map((collection) => (
+            <div
+              key={collection.id}
+              style={{
+                backgroundColor: "#1e293b",
+                padding: "20px",
+                borderRadius: "10px",
+                boxShadow: "0 2px 5px rgba(0,0,0,0.3)",
+              }}
+            >
+              <h3>📂 {collection.name}</h3>
             </div>
-
-            {/* MOVIES */}
-            {Array.isArray(col.movies) && col.movies.length > 0 && (
-              <ul>
-                {col.movies.map((movie) => (
-                  <li key={movie.id} style={styles.movieItem}>
-                    🎥 {movie.title || movie.movie_id}
-
-                    <button
-                      style={styles.removeBtn}
-                      onClick={() =>
-                        handleRemoveMovie(col.id, movie.id)
-                      }
-                    >
-                      Remove
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        ))}
+          ))
+        ) : (
+          <p>No Collections Created Yet</p>
+        )}
       </div>
     </div>
   );
 }
-
-// =========================
-// STYLES (FINAL COLORS VERSION)
-// =========================
-const styles = {
-  page: {
-    padding: "20px",
-    minHeight: "100vh",
-    fontFamily: "Arial",
-    background: "linear-gradient(135deg, #000000, #111827)",
-    color: "white",
-  },
-
-  box: {
-    marginBottom: "20px",
-    padding: "15px",
-    background: "#1e293b",
-    borderRadius: "10px",
-  },
-
-  input: {
-    display: "block",
-    width: "100%",
-    marginBottom: "10px",
-    padding: "10px",
-    borderRadius: "6px",
-    border: "none",
-    outline: "none",
-  },
-
-  createBtn: {
-    padding: "10px 15px",
-    background: "#3b82f6",
-    color: "white",
-    border: "none",
-    cursor: "pointer",
-    borderRadius: "6px",
-  },
-
-  grid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-    gap: "15px",
-  },
-
-  card: {
-    background: "#1e293b",
-    padding: "15px",
-    borderRadius: "10px",
-  },
-
-  row: {
-    display: "flex",
-    gap: "10px",
-    marginTop: "10px",
-  },
-
-  // 🌟 COLORS UPDATED HERE
-  addBtn: {
-    background: "#16a34a",
-    color: "white",
-    padding: "6px 10px",
-    border: "none",
-    borderRadius: "6px",
-    cursor: "pointer",
-  },
-
-  deleteBtn: {
-    background: "#dc2626",
-    color: "white",
-    padding: "6px 10px",
-    border: "none",
-    borderRadius: "6px",
-    cursor: "pointer",
-  },
-
-  removeBtn: {
-    marginLeft: "10px",
-    background: "#7c3aed",
-    color: "white",
-    padding: "4px 8px",
-    border: "none",
-    borderRadius: "6px",
-    cursor: "pointer",
-  },
-
-  movieItem: {
-    marginTop: "8px",
-  },
-};
+ 
+export default Collections;
+ 

@@ -1,6 +1,5 @@
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, declarative_base
 
 # =========================
 # DATABASE URL
@@ -12,7 +11,7 @@ DATABASE_URL = "sqlite:///./movie.db"
 # =========================
 engine = create_engine(
     DATABASE_URL,
-    connect_args={"check_same_thread": False}  # SQLite special requirement
+    connect_args={"check_same_thread": False}  # only for SQLite
 )
 
 # =========================
@@ -25,12 +24,12 @@ SessionLocal = sessionmaker(
 )
 
 # =========================
-# BASE MODEL
+# BASE
 # =========================
 Base = declarative_base()
 
 # =========================
-# DB DEPENDENCY (IMPORTANT)
+# DB DEPENDENCY
 # =========================
 def get_db():
     db = SessionLocal()

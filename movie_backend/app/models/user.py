@@ -1,51 +1,21 @@
-from sqlalchemy import (
-    Column,
-    Integer,
-    String,
-    Boolean
-)
-
+from sqlalchemy import Column, Integer, String, Boolean
 from sqlalchemy.orm import relationship
-
 from app.database import Base
 
 
 class User(Base):
-
     __tablename__ = "users"
 
     # =========================
     # COLUMNS
     # =========================
+    id = Column(Integer, primary_key=True, index=True)
 
-    id = Column(
-        Integer,
-        primary_key=True,
-        index=True
-    )
+    username = Column(String, unique=True, nullable=False)
+    email = Column(String, unique=True, nullable=False)
+    password = Column(String, nullable=False)
 
-    username = Column(
-        String,
-        unique=True,
-        nullable=False
-    )
-
-    email = Column(
-        String,
-        unique=True,
-        nullable=False
-    )
-
-    password = Column(
-        String,
-        nullable=False
-    )
-
-    # NEW COLUMN
-    is_admin = Column(
-        Boolean,
-        default=False
-    )
+    is_admin = Column(Boolean, default=False)
 
     # =========================
     # RELATIONSHIPS
@@ -83,4 +53,13 @@ class User(Base):
     reviews = relationship(
         "Review",
         back_populates="user"
+    )
+
+    # =========================
+    # 🔥 FIXED: COLLECTIONS (ADD THIS)
+    # =========================
+    collections = relationship(
+        "Collection",
+        back_populates="user",
+        cascade="all, delete"
     )

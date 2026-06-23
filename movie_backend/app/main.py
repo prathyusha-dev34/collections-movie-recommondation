@@ -1,12 +1,10 @@
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.routes.collections import router as collections_router
 
 from app.database import Base, engine
 
-# =========================
-# ROUTES IMPORT
-# =========================
+# ROUTES
 from app.routes import (
     auth,
     favorites,
@@ -19,10 +17,7 @@ from app.routes import (
     profile
 )
 
-# ⭐ COLLECTIONS (DIRECT IMPORT FIX)
 from app.routes.collections import router as collections_router
-
-# ADMIN ROUTES
 from app.routes.admin import router as admin_router
 
 # =========================
@@ -36,7 +31,7 @@ Base.metadata.create_all(bind=engine)
 app = FastAPI(title="Movie Backend API")
 
 # =========================
-# CORS CONFIG (SAFE FOR DEV)
+# CORS
 # =========================
 app.add_middleware(
     CORSMiddleware,
@@ -45,6 +40,7 @@ app.add_middleware(
         "http://127.0.0.1:5173",
         "http://localhost:3000",
         "http://127.0.0.1:3000",
+        "https://collections-movie-recommondation-ol.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -52,7 +48,7 @@ app.add_middleware(
 )
 
 # =========================
-# ROUTES REGISTER
+# ROUTES
 # =========================
 app.include_router(auth.router)
 app.include_router(favorites.router)
@@ -64,27 +60,24 @@ app.include_router(watchlist.router)
 app.include_router(reviews.router)
 app.include_router(profile.router)
 
-# ⭐ COLLECTIONS ROUTE
+# ✅ FIXED COLLECTION ROUTE (IMPORTANT)
 app.include_router(
     collections_router,
     prefix="/api/collections",
     tags=["Collections"]
 )
 
-# =========================
-# ADMIN ROUTES
-# =========================
 app.include_router(
     admin_router,
     prefix="/api/admin",
     tags=["Admin"]
 )
 
+app.include_router(collections_router)
+
 # =========================
-# ROOT ENDPOINT
+# ROOT
 # =========================
 @app.get("/")
 def root():
-    return {
-        "message": "Movie Backend API is running 🚀"
-    }
+    return {"message": "Movie Backend API is running 🚀"}

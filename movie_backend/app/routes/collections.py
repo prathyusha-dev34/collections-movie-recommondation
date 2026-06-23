@@ -4,33 +4,25 @@ from uuid import uuid4
 
 from app.database import get_db
 from app.models.collection import Collection
-from app.schemas.collection import CollectionCreate, Movie
+from app.schemas.collection import CollectionCreate, CollectionResponse, Movie
+from app.auth import get_current_user
 
-router = APIRouter()
-
-
-# =========================
-# TEST ROUTE
-# =========================
-@router.get("/test")
-def test():
-    return {"message": "Collections API Working"}
+router = APIRouter(prefix="/api/collections", tags=["Collections"])
 
 
-# =========================
-# CREATE COLLECTION
-# =========================
-@router.post("/")
+# ✅ CREATE COLLECTION
+@router.post("/", response_model=CollectionResponse)
 def create_collection(
-    user_id: str,
-    data: CollectionCreate,
-    db: Session = Depends(get_db)
+    payload: CollectionCreate,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
 ):
+
     new_collection = Collection(
         collection_id=str(uuid4()),
-        user_id=user_id,
-        name=data.name,
-        description=data.description,
+        user_id=current_user.id,
+        name=payload.name,
+        description=payload.description,
         movies=[]
     )
 
@@ -41,141 +33,56 @@ def create_collection(
     return new_collection
 
 
-# =========================
-# GET USER COLLECTIONS
-# =========================
-@router.get("/user/{user_id}")
+# ✅ GET COLLECTIONS
+@router.get("/", response_model=list[CollectionResponse])
 def get_collections(
-    user_id: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
 ):
-    return db.query(Collection).filter(
-        Collection.user_id == user_id
+
+    collections = db.query(Collection).filter(
+        Collection.user_id == current_user.id
     ).all()
 
+    # IMPORTANT: ensure movies is always a list
+    for c in collections:
+        if c.movies is None:
+            c.movies = []
 
-# =========================
-# GET SINGLE COLLECTION
-# =========================
-@router.get("/{collection_id}")
-def get_collection(
-    collection_id: str,
-    db: Session = Depends(get_db)
-):
-    collection = db.query(Collection).filter(
-        Collection.collection_id == collection_id
-    ).first()
-
-    if not collection:
-        raise HTTPException(
-            status_code=404,
-            detail="Collection not found"
-        )
-
-    return collection
+    return collections
 
 
-# =========================
-# UPDATE COLLECTION
-# =========================
-@router.put("/{collection_id}")
-def update_collection(
-    collection_id: str,
-    data: CollectionCreate,
-    db: Session = Depends(get_db)
-):
-    collection = db.query(Collection).filter(
-        Collection.collection_id == collection_id
-    ).first()
-
-    if not collection:
-        raise HTTPException(
-            status_code=404,
-            detail="Collection not found"
-        )
-
-    collection.name = data.name
-    collection.description = data.description
-
-    db.commit()
-    db.refresh(collection)
-
-    return collection
-
-
-# =========================
-# DELETE COLLECTION
-# =========================
-@router.delete("/{collection_id}")
-def delete_collection(
-    collection_id: str,
-    db: Session = Depends(get_db)
-):
-    collection = db.query(Collection).filter(
-        Collection.collection_id == collection_id
-    ).first()
-
-    if not collection:
-        raise HTTPException(
-            status_code=404,
-            detail="Collection not found"
-        )
-
-    db.delete(collection)
-    db.commit()
-
-    return {
-        "message": "Collection deleted successfully"
-    }
-
-
-# =========================
-# ADD MOVIE
-# =========================
-# =========================
-# ADD MOVIE
-# =========================
+# ✅ ADD MOVIE
 @router.post("/{collection_id}/movies")
 def add_movie(
     collection_id: str,
-    movie: Movie,
-    db: Session = Depends(get_db)
+    payload: Movie,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
 ):
-    print("\n===== DEBUG START =====")
-    print("SEARCHING FOR:", collection_id)
-
-    all_collections = db.query(Collection).all()
-
-    print("TOTAL COLLECTIONS:", len(all_collections))
-
-    for c in all_collections:
-        print(
-            f"ID={c.collection_id}, "
-            f"NAME={c.name}, "
-            f"USER={c.user_id}"
-        )
 
     collection = db.query(Collection).filter(
-        Collection.collection_id == collection_id
+        Collection.collection_id == collection_id,
+        Collection.user_id == current_user.id
     ).first()
 
-    print("FOUND:", collection)
-    print("===== DEBUG END =====\n")
-
+    # 🔴 FIX: better debug message
     if not collection:
         raise HTTPException(
             status_code=404,
-            detail="Collection not found"
+            detail=f"Collection not found for user_id={current_user.id}"
         )
 
-    movies = collection.movies or []
+    # ensure list exists
+    if not isinstance(collection.movies, list):
+        collection.movies = []
 
-    movies.append({
-        "movie_id": movie.movie_id,
-        "movie_title": movie.movie_title
-    })
+    # prevent duplicate crash
+    movie_data = payload.dict()
 
-    collection.movies = movies
+    # optional: avoid duplicates
+    if movie_data not in collection.movies:
+        collection.movies.append(movie_data)
 
     db.commit()
     db.refresh(collection)
@@ -183,40 +90,4 @@ def add_movie(
     return {
         "message": "Movie added successfully",
         "collection": collection
-    }
-
-# =========================
-# REMOVE MOVIE
-# =========================
-@router.delete("/{collection_id}/movies/{movie_id}")
-def remove_movie(
-    collection_id: str,
-    movie_id: str,
-    db: Session = Depends(get_db)
-):
-    collection = db.query(Collection).filter(
-        Collection.collection_id == collection_id
-    ).first()
-
-    if not collection:
-        raise HTTPException(
-            status_code=404,
-            detail="Collection not found"
-        )
-
-    if not collection.movies:
-        return {
-            "message": "No movies in collection"
-        }
-
-    collection.movies = [
-        m for m in collection.movies
-        if m.get("movie_id") != movie_id
-    ]
-
-    db.commit()
-    db.refresh(collection)
-
-    return {
-        "message": "Movie removed successfully"
     }

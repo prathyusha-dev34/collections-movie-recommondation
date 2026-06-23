@@ -8,50 +8,45 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.user import User
 
+# =========================
+# CONFIG
+# =========================
 SECRET_KEY = "mysecretkey123456"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
-pwd_context = CryptContext(
-    schemes=["bcrypt"],
-    deprecated="auto"
-)
-
-oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl="/auth/login"
-)
-
+# =========================
+# PASSWORD HASHING
+# =========================
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def hash_password(password: str):
     return pwd_context.hash(password)
 
+def verify_password(plain_password: str, hashed_password: str):
+    return pwd_context.verify(plain_password, hashed_password)
 
-def verify_password(
-    plain_password: str,
-    hashed_password: str
-):
-    return pwd_context.verify(
-        plain_password,
-        hashed_password
-    )
+# =========================
+# OAUTH2 SCHEME
+# IMPORTANT: match your actual login route
+# =========================
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
-
+# =========================
+# CREATE JWT TOKEN
+# =========================
 def create_access_token(data: dict):
     to_encode = data.copy()
 
-    expire = datetime.utcnow() + timedelta(
-        minutes=ACCESS_TOKEN_EXPIRE_MINUTES
-    )
-
+    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
 
-    return jwt.encode(
-        to_encode,
-        SECRET_KEY,
-        algorithm=ALGORITHM
-    )
+    # IMPORTANT: keep user_id consistent (INTEGER)
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
-
+# =========================
+# GET CURRENT USER
+# =========================
 def get_current_user(
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db)
@@ -62,11 +57,7 @@ def get_current_user(
     )
 
     try:
-        payload = jwt.decode(
-            token,
-            SECRET_KEY,
-            algorithms=[ALGORITHM]
-        )
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
 
         user_id = payload.get("sub")
 
@@ -76,11 +67,13 @@ def get_current_user(
     except JWTError:
         raise credentials_exception
 
-    user = (
-        db.query(User)
-        .filter(User.id == int(user_id))
-        .first()
-    )
+    # IMPORTANT FIX: convert safely to int
+    try:
+        user_id = int(user_id)
+    except:
+        raise credentials_exception
+
+    user = db.query(User).filter(User.id == user_id).first()
 
     if not user:
         raise HTTPException(
@@ -90,21 +83,13 @@ def get_current_user(
 
     return user
 
-
-# ==========================
-# ADMIN AUTHORIZATION
-# ==========================
-def get_admin_user(
-    current_user: User = Depends(get_current_user)
-):
-    """
-    Allows only admin users.
-    """
-
+# =========================
+# ADMIN CHECK
+# =========================
+def get_admin_user(current_user: User = Depends(get_current_user)):
     if not current_user.is_admin:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin access required"
         )
-
     return current_user
