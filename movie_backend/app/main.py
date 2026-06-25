@@ -1,10 +1,16 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routes.collections import router as collections_router
 
 from app.database import Base, engine
 
-# ROUTES
+# =========================
+# APP INIT
+# =========================
+app = FastAPI(title="Movie Backend API")
+
+# =========================
+# ROUTES IMPORTS
+# =========================
 from app.routes import (
     auth,
     favorites,
@@ -19,6 +25,7 @@ from app.routes import (
 
 from app.routes.collections import router as collections_router
 from app.routes.admin import router as admin_router
+from app.routes.notifications import router as notifications_router  # ✅ ADDED
 
 # =========================
 # CREATE TABLES
@@ -26,12 +33,7 @@ from app.routes.admin import router as admin_router
 Base.metadata.create_all(bind=engine)
 
 # =========================
-# APP INIT
-# =========================
-app = FastAPI(title="Movie Backend API")
-
-# =========================
-# CORS
+# CORS SETUP
 # =========================
 app.add_middleware(
     CORSMiddleware,
@@ -60,23 +62,35 @@ app.include_router(watchlist.router)
 app.include_router(reviews.router)
 app.include_router(profile.router)
 
-# ✅ FIXED COLLECTION ROUTE (IMPORTANT)
+# =========================
+# COLLECTIONS ROUTE
+# =========================
 app.include_router(
     collections_router,
     prefix="/api/collections",
     tags=["Collections"]
 )
 
+# =========================
+# NOTIFICATIONS ROUTE (✅ FIXED)
+# =========================
+app.include_router(
+    notifications_router,
+    prefix="/api/notifications",
+    tags=["Notifications"]
+)
+
+# =========================
+# ADMIN ROUTE
+# =========================
 app.include_router(
     admin_router,
     prefix="/api/admin",
     tags=["Admin"]
 )
 
-app.include_router(collections_router)
-
 # =========================
-# ROOT
+# ROOT API
 # =========================
 @app.get("/")
 def root():

@@ -27,13 +27,12 @@ def verify_password(plain_password: str, hashed_password: str):
     return pwd_context.verify(plain_password, hashed_password)
 
 # =========================
-# OAUTH2 SCHEME
-# IMPORTANT: match your actual login route
+# FIX: OAuth2 scheme
 # =========================
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 # =========================
-# CREATE JWT TOKEN
+# CREATE ACCESS TOKEN
 # =========================
 def create_access_token(data: dict):
     to_encode = data.copy()
@@ -41,11 +40,14 @@ def create_access_token(data: dict):
     expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
 
-    # IMPORTANT: keep user_id consistent (INTEGER)
+    # IMPORTANT: sub must be string
+    if "sub" in to_encode:
+        to_encode["sub"] = str(to_encode["sub"])
+
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 # =========================
-# GET CURRENT USER
+# GET CURRENT USER (FIXED)
 # =========================
 def get_current_user(
     token: str = Depends(oauth2_scheme),
@@ -53,7 +55,8 @@ def get_current_user(
 ):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Unauthorized"
+        detail="Unauthorized",
+        headers={"WWW-Authenticate": "Bearer"},
     )
 
     try:
@@ -64,13 +67,9 @@ def get_current_user(
         if user_id is None:
             raise credentials_exception
 
-    except JWTError:
-        raise credentials_exception
-
-    # IMPORTANT FIX: convert safely to int
-    try:
         user_id = int(user_id)
-    except:
+
+    except (JWTError, ValueError):
         raise credentials_exception
 
     user = db.query(User).filter(User.id == user_id).first()

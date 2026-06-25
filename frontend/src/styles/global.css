@@ -1,0 +1,218 @@
+/* =========================
+   GLOBAL RESET
+========================= */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+body {
+  background: #0f172a; /* dark blue theme */
+  color: #e5e7eb;
+}
+
+/* =========================
+   LAYOUT
+========================= */
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 240px;
+  background: #111827;
+  padding: 20px;
+  position: fixed;
+  height: 100vh;
+  overflow-y: auto;
+  border-right: 1px solid #1f2937;
+}
+
+.main-content {
+  margin-left: 240px;
+  flex: 1;
+  padding: 20px;
+}
+
+/* =========================
+   NAVBAR
+========================= */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #111827;
+  padding: 12px 20px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+
+/* =========================
+   SECTION TITLE
+========================= */
+.section-title {
+  font-size: 22px;
+  margin: 20px 0 15px;
+  font-weight: 600;
+  color: #facc15;
+}
+
+/* =========================
+   MOVIE GRID
+========================= */
+.movies-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+/* =========================
+   MOVIE CARD
+========================= */
+.movie-card {
+  background: #1f2937;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: 0.3s;
+  cursor: pointer;
+}
+
+.movie-card:hover {
+  transform: scale(1.05);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+}
+
+.movie-card img {
+  width: 100%;
+  height: 260px;
+  object-fit: cover;
+}
+
+.movie-info {
+  padding: 10px;
+}
+
+.movie-info h3 {
+  font-size: 16px;
+  margin-bottom: 5px;
+  color: #fff;
+}
+
+.movie-info p {
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+/* =========================
+   BUTTONS
+========================= */
+button {
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: 0.2s;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+.remove-btn {
+  background: #ef4444;
+  color: white;
+  margin-top: 8px;
+}
+
+/* =========================
+   SEARCH BAR
+========================= */
+.search-bar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.search-bar input {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  outline: none;
+  background: #1f2937;
+  color: white;
+}
+
+.search-bar button {
+  background: #3b82f6;
+  color: white;
+}
+
+/* =========================
+   NOTIFICATIONS DROPDOWN
+========================= */
+.notification-bell {
+  position: relative;
+  cursor: pointer;
+}
+
+.notification-dropdown {
+  position: absolute;
+  right: 0;
+  top: 35px;
+  width: 300px;
+  background: white;
+  color: black;
+  border-radius: 8px;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+  overflow: hidden;
+}
+
+.notification-item {
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+}
+
+.notification-item:hover {
+  background: #f3f4f6;
+}
+
+/* =========================
+   LOGIN PAGE
+========================= */
+.auth-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.auth-form {
+  background: #1f2937;
+  padding: 30px;
+  border-radius: 12px;
+  width: 300px;
+}
+
+.auth-form input {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border-radius: 8px;
+  border: none;
+  background: #111827;
+  color: white;
+}
+
+.auth-form button {
+  width: 100%;
+  background: #22c55e;
+  color: white;
+  margin-top: 10px;
+}
